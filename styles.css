@@ -1,36 +1,52 @@
 /* General Styles */
 body {
-    font-family: Arial, sans-serif;
+    font-family: 'Poppins', sans-serif; /* Modern font */
     margin: 0;
     padding: 0;
     background-color: #f4f4f4;
     color: #333;
+    font-size: 16px;
 }
 
+/* Header Styles */
 header {
     background-color: #d9534f; /* Red theme */
     color: white;
     text-align: center;
-    padding: 2rem;
+    padding: 3rem 1rem;
+    background-image: url('https://www.shutterstock.com/search/online-news-media'); /* Newspaper Image */
+    background-size: cover;
+    background-position: center;
+    border-bottom: 5px solid #c9302c; /* Darker red border */
 }
 
-h1 {
-    font-size: 3rem;
+header h1 {
+    font-size: 3.5rem;
+    font-weight: bold;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
 }
 
-.container {
-    text-align: center;
-    margin-top: 2rem;
+header p {
+    font-size: 1.3rem;
+    margin-top: 1rem;
 }
 
+/* Button Styles */
 button {
-    padding: 10px 20px;
+    padding: 12px 30px;
     background-color: #d9534f;
     color: white;
     border: none;
     font-size: 1.2rem;
     cursor: pointer;
     border-radius: 5px;
+    transition: background-color 0.3s;
+}
+
+/* Center the Button */
+.container {
+    text-align: center; /* Centers buttons horizontally */
+    margin-top: 2rem;
 }
 
 button:hover {
@@ -44,7 +60,7 @@ button:hover {
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: rgba(0, 0, 0, 0.7);
     justify-content: center;
     align-items: center;
 }
@@ -57,33 +73,18 @@ button:hover {
     width: 300px;
 }
 
-input[type="text"] {
-    padding: 10px;
-    width: 80%;
-    font-size: 1.2rem;
-    margin: 10px 0;
-}
-
+/* Search Section Styles */
 .search-container {
     text-align: center;
     margin-top: 2rem;
 }
 
-#search-bar {
-    padding: 10px;
-    width: 60%;
+#search-button {
+    padding: 15px 25px;
     font-size: 1.2rem;
-    margin-bottom: 2rem;
-}
-
-footer {
     background-color: #d9534f;
     color: white;
-    text-align: center;
-    padding: 1rem;
-    position: fixed;
-    width: 100%;
-    bottom: 0;
+    border-radius: 5px;
 }
 
 #articles-display {
@@ -94,4 +95,95 @@ footer {
 
 #article-results {
     margin-top: 1rem;
+}
+
+/* Footer Styles */
+footer {
+    background-color: #d9534f;
+    color: white;
+    text-align: center;
+    padding: 1rem;
+    position: fixed;
+    width: 100%;
+    bottom: 0;
+    font-size: 1rem;
+}
+
+/* Side Panel Styles */
+.side-panel {
+    position: fixed;
+    top: 0;
+    right: -320px; /* Initially off-screen */
+    width: 320px;
+    height: 100%;
+    background-color: #333;
+    color: white;
+    padding: 20px;
+    transition: right 0.3s ease-in-out;
+    overflow-y: auto;
+    box-shadow: -5px 0px 15px rgba(0, 0, 0, 0.3);
+}
+
+.side-panel h3 {
+    font-size: 1.7rem;
+    margin-bottom: 1rem;
+}
+
+.side-panel p {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+}
+
+/* Hover to reveal side panel */
+body:hover .side-panel {
+    right: 0; /* Show panel when hovering the body */
+}
+
+.side-panel .panel-header {
+    text-align: center;
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+}
+
+/* Side Panel Image (Newspaper) */
+.side-panel .panel-image {
+    width: 100%;
+    height: auto;
+    margin-bottom: 1.5rem;
+    border-radius: 5px;
+}
+
+/* For News Articles Cards */
+.news-card {
+    background-color: #fff;
+    border-radius: 15px;
+    padding: 20px;
+    margin: 10px;
+    box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.1);
+    transition: box-shadow 0.3s ease;
+}
+
+.news-card:hover {
+    box-shadow: 0px 15px 25px rgba(0, 0, 0, 0.2);
+}
+
+.news-card h3 {
+    font-size: 1.5rem;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.news-card p {
+    font-size: 1.2rem;
+    color: #777;
+}
+
+.news-card a {
+    color: #d9534f;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+.news-card a:hover {
+    text-decoration: underline;
 }

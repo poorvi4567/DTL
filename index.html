@@ -9,32 +9,30 @@
 </head>
 <body>
     <header>
-        <h1>NewsLens</h1>
-        <p>Your gateway to the latest articles</p>
+        <h1>Bias Alias</h1>
+        <p>Offering fresh perspectives for better reflection</p>
     </header>
     
-    <!-- Dialog Box for URL Input -->
+    <!-- Button to Input Article URL -->
     <div class="container">
-        <button class="button" onclick="openDialog()">Input Article URL</button>
-        <div id="url-dialog" class="dialog">
-            <div class="dialog-content">
-                <h3>Enter Article URL</h3>
-                <input type="text" id="article-url" placeholder="Paste the article URL here">
-                <button onclick="submitUrl()">Submit</button>
-                <button onclick="closeDialog()">Close</button>
-            </div>
-        </div>
+        <button class="button" onclick="openStreamlitPage()">Input Article URL</button>
     </div>
 
-    <!-- Search Bar for Article Search -->
+    <!-- Button to Search for Articles -->
     <div class="search-container">
-        <input type="text" id="search-bar" placeholder="Search Articles..." oninput="searchArticles()">
+        <button class="button" id="search-button" onclick="searchArticles()">Search Articles</button>
     </div>
 
     <!-- Section for displaying articles -->
     <div id="articles-display">
         <h2>Articles</h2>
         <div id="article-results"></div>
+    </div>
+
+    <!-- Side Panel for Sentiment Analysis and Bias Detection -->
+    <div id="side-panel" class="side-panel">
+        <h3>Introducing BiasAlias: Your Tool for Detecting News Bias</h3>
+        <p>BiasAlias is an innovative app that helps users identify bias in news articles by performing sentiment analysis. It provides polarity and subjectivity ratings to highlight the tone and potential bias of content. With two main features—inputting a URL of an article for analysis or performing a Google search on a keyword—BiasAlias offers insights on multiple articles, including an alternate opinion to provide a balanced view. Stay informed and critically evaluate media with BiasAlias.</p>
     </div>
 
     <footer>
