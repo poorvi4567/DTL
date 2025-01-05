@@ -7,3 +7,5 @@ matplotlib
 textblob
 nltk
 serpapi
+seaborn
+
