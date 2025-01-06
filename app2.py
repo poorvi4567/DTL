@@ -1,201 +1,141 @@
 import streamlit as st
-import pandas as pd
 import requests
+from bs4 import BeautifulSoup
 from textblob import TextBlob
-from serpapi import GoogleSearch
-from io import BytesIO
-import matplotlib.pyplot as plt
-import seaborn as sns
+import re
 
-# SerpAPI API key
-SERPAPI_KEY = "5a098566bfea0cfd20b0629f677b8d7fee5b6ec6a7911f991ef1c436b271e3ef"
-
-def fetch_articles(query, num_results=10):
-    """Fetch article URLs using SerpAPI."""
-    params = {
-        "engine": "google",
-        "q": query,
-        "num": num_results,
-        "api_key": SERPAPI_KEY,
-    }
-    search = GoogleSearch(params)
-    results = search.get_dict()
-    articles = []
-    
-    if "organic_results" in results:
-        for result in results["organic_results"]:
-            title = result.get("title", "")
-            link = result.get("link", "")
-            snippet = result.get("snippet", "")
-            articles.append({"Title": title, "Link": link, "Snippet": snippet})
-    
-    return pd.DataFrame(articles)
-
-def fetch_content(url):
-    """Fetch the main content of an article."""
-    try:
-        response = requests.get(url, timeout=10)
-        response.raise_for_status()
-        return response.text[:5000]  # Return up to 5000 characters for simplicity
-    except Exception as e:
-        return f"Error fetching content: {e}"
-
-def analyze_sentiment(text):
-    """Perform sentiment analysis and return polarity and subjectivity."""
-    blob = TextBlob(text)
-    return blob.sentiment.polarity, blob.sentiment.subjectivity
-
-def compute_bias_rating(polarity):
-    """Compute bias rating based on sentiment polarity."""
-    if polarity < -0.5:
-        return 1  # Strong negative bias
-    elif polarity < -0.2:
-        return 2  # Moderate negative bias
-    elif polarity < 0.2:
-        return 3  # Neutral
-    elif polarity < 0.5:
-        return 4  # Moderate positive bias
-    else:
-        return 5  # Strong positive bias
-
-def bias_reasoning(polarity):
-    """Provide detailed reasoning for the bias rating."""
-    if polarity < -0.5:
-        return "The article uses strongly negative language, focusing on critical perspectives."
-    elif polarity < -0.2:
-        return "The article leans negative, highlighting issues or challenges with a moderate tone."
-    elif polarity < 0.2:
-        return "The article maintains a neutral perspective, presenting a balanced view."
-    elif polarity < 0.5:
-        return "The article adopts a moderately positive tone, emphasizing strengths or opportunities."
-    else:
-        return "The article is strongly positive, often highlighting favorable aspects."
-
-def download_as_excel(dataframe):
-    """Prepare dataframe for download as Excel."""
-    output = BytesIO()
-    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        dataframe.to_excel(writer, index=False, sheet_name='Articles')
-    processed_data = output.getvalue()
-    return processed_data
-
-# Streamlit UI with custom CSS
-st.set_page_config(layout="wide", page_title="Interactive Article Analysis")
-st.markdown("""
-    <style>
+# Custom CSS for styling
+custom_css = """
+<style>
     body {
         font-family: 'Arial', sans-serif;
-        background-color: #f4f4f4;
         color: #333;
-        font-size: 18px;
+        background-color: #f0f8ff; /* Light blue background */
+        margin: 0;
+        padding: 0;
     }
-    h1 {
+    .title {
+        color: #2a9d8f;
         font-size: 4rem;
-        color: #d9534f;
+        font-weight: bold;
+        text-align: center;
+        margin-top: 30px;
+        margin-bottom: 20px;
     }
-    h2 {
+    .description {
+        font-size: 1.6rem;
+        line-height: 1.8;
+        color: #264653;
+        margin-bottom: 20px;
+    }
+    .result-box {
+        border: 2px solid #2a9d8f;
+        padding: 30px;
+        border-radius: 12px;
+        background-color: #e9f5f2;
+        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    }
+    .result-title {
         font-size: 2.5rem;
-        color: #d9534f;
+        color: #264653;
+        margin-bottom: 10px;
+        font-weight: bold;
     }
-    h3 {
-        font-size: 2rem;
-        color: #d9534f;
+    .emoji {
+        font-size: 2.5rem;
+        margin-right: 10px;
     }
-    .stTextInput>div>div>input {
-        font-size: 1.5rem;
+    input[type="text"] {
+        font-size: 1.6rem;
+        padding: 15px;
+        width: 70%;
+        margin: 20px auto;
+        border-radius: 8px;
+        border: 2px solid #2a9d8f;
+        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
     }
-    .stButton>button {
-        font-size: 1.5rem;
-        padding: 12px 30px;
-        background-color: #d9534f;
+    button {
+        font-size: 1.6rem;
+        padding: 15px 30px;
+        background-color: #2a9d8f;
         color: white;
-        border-radius: 10px;
+        border: none;
+        border-radius: 8px;
         cursor: pointer;
+        box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
     }
-    .stButton>button:hover {
-        background-color: #c9302c;
-    }
-    .stMarkdown {
-        font-size: 1.2rem;
+    button:hover {
+        background-color: #264653;
     }
     footer {
-        font-size: 1.2rem;
-        background-color: #333; /* Dark background for footer */
-        color: white;
-        padding: 10px;
+        font-size: 1.4rem;
         text-align: center;
+        margin-top: 40px;
+        color: #264653;
     }
-    </style>
-""", unsafe_allow_html=True)
+</style>
+"""
 
-# Main content
-st.title("Google Search with Bias Detector Tool 🎯")
-st.markdown("### Explore diverse perspectives with real-time sentiment analysis and alternative opinions. 🔍")
+# Function to extract article text from a URL
+def extract_text_from_url(url):
+    try:
+        response = requests.get(url)
+        soup = BeautifulSoup(response.content, 'html.parser')
+        paragraphs = soup.find_all('p')
+        text = " ".join([p.get_text() for p in paragraphs])
+        return re.sub(r'\s+', ' ', text.strip())
+    except Exception as e:
+        return None
 
-query = st.text_input("Search Topic", placeholder="Type a topic, e.g., climate change 🌍")
-num_results = st.number_input("Number of Results", min_value=1, max_value=50, value=10)
-
-if st.button("Search and Analyze 🕵️‍♂️"):
-    if not SERPAPI_KEY:
-        st.error("❗ Please set your SerpAPI key in the code.")
-    elif not query.strip():
-        st.error("❗ Search topic cannot be empty.")
+# Function to detect potential bias and analyze sentiment
+def detect_bias_and_sentiment(article_text):
+    blob = TextBlob(article_text)
+    
+    # Sentiment analysis
+    sentiment_polarity = blob.sentiment.polarity  # Range from -1 (negative) to 1 (positive)
+    sentiment_subjectivity = blob.sentiment.subjectivity  # Range from 0 (objective) to 1 (subjective)
+    
+    sentiment_desc = (
+        "Positive 😄" if sentiment_polarity > 0 
+        else "Negative 😢" if sentiment_polarity < 0 
+        else "Neutral 😐"
+    )
+    
+    # Basic bias detection
+    if 'government' in article_text.lower() or 'politics' in article_text.lower():
+        bias_note = "This article discusses topics that are often politically charged. ⚖️ Be mindful of potential bias."
+    elif 'economy' in article_text.lower():
+        bias_note = "Economic articles can reflect the author's perspective on financial policies. 💰"
     else:
-        st.info("Fetching articles... ⏳")
-        articles_df = fetch_articles(query, num_results)
+        bias_note = "This article may have subjective viewpoints based on its content. 📖"
 
-        if articles_df.empty:
-            st.error("No articles found for the given topic. 😞")
+    return sentiment_desc, sentiment_polarity, sentiment_subjectivity, bias_note
+
+# Streamlit UI
+st.set_page_config(page_title="Bias Detection and Sentiment Analysis", layout="centered")
+st.markdown(custom_css, unsafe_allow_html=True)
+
+# Title with emoji
+st.markdown("<div class='title'>📰 Bias Detection & Sentiment Analysis</div>", unsafe_allow_html=True)
+
+url = st.text_input("Enter the article URL:", "", placeholder="https://example.com/news-article")
+
+if st.button("Analyze"):
+    if url:
+        article_text = extract_text_from_url(url)
+        if article_text:
+            sentiment_desc, sentiment_polarity, sentiment_subjectivity, bias_note = detect_bias_and_sentiment(article_text)
+
+            st.markdown("<div class='result-box'>", unsafe_allow_html=True)
+            st.markdown(f"<div class='result-title'><span class='emoji'>🔍</span> Sentiment: {sentiment_desc}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='description'>Polarity: {sentiment_polarity:.2f}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='description'>Subjectivity: {sentiment_subjectivity:.2f}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='description'>{bias_note}</div>", unsafe_allow_html=True)
+            st.markdown("</div>", unsafe_allow_html=True)
         else:
-            st.success(f"Successfully fetched articles. 🎉")
-            st.info("Performing sentiment analysis... 🔬")
-            articles_df["Content"] = articles_df["Link"].apply(fetch_content)
-            articles_df["Polarity"], articles_df["Subjectivity"] = zip(
-                *articles_df["Content"].apply(lambda x: analyze_sentiment(x))
-            )
-            articles_df["Bias Rating"] = articles_df["Polarity"].apply(compute_bias_rating)
-            articles_df["Bias Reasoning"] = articles_df["Polarity"].apply(bias_reasoning)
-            
-            st.write("Analysis complete. Here are the results:")
+            st.error("❌ Failed to extract text from the provided URL. Please try another link.")
+    else:
+        st.error("⚠️ Please enter a valid URL.")
 
-            for _, row in articles_df.iterrows():
-                with st.container():
-                    st.subheader(row["Title"])
-                    st.markdown(f"**Link:** [Read Article]({row['Link']}) 🔗")
-                    st.markdown(f"**Snippet:** {row['Snippet']} 📝")
-                    st.markdown(f"**Polarity:** {row['Polarity']:.2f} | **Subjectivity:** {row['Subjectivity']:.2f}")
-                    st.markdown(f"**Bias Reasoning:** {row['Bias Reasoning']}")
-
-                    # Fetch alternate opinion based on opposite polarity
-                    if row["Polarity"] > 0:  # Positive polarity
-                        alternate = articles_df.loc[articles_df["Polarity"] < 0]
-                    elif row["Polarity"] < 0:  # Negative polarity
-                        alternate = articles_df.loc[articles_df["Polarity"] > 0]
-                    else:  # Neutral polarity
-                        alternate = articles_df.loc[articles_df["Polarity"].abs() == articles_df["Polarity"].abs().max()]
-
-                    if not alternate.empty:
-                        alt_article = alternate.iloc[0]
-                        st.markdown(f"**Alternate Opinion:** [{alt_article['Title']}]({alt_article['Link']}) 📰")
-                    else:
-                        st.markdown("**Alternate Opinion:** No opposite opinion found. 😞")
-
-            st.download_button(
-                label="Download Results as Excel 📊",
-                data=download_as_excel(articles_df),
-                file_name="articles_analysis.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            )
-
-            # Visualization
-            st.markdown("### Sentiment Analysis Visualization 📊")
-            plt.figure(figsize=(12, 6))
-            sns.barplot(x=articles_df.index, y=articles_df["Polarity"], palette="coolwarm")
-            plt.axhline(0, color='black', linewidth=0.8, linestyle='--')
-            plt.title("Polarity of Articles", fontsize=16)
-            plt.xlabel("Article Index", fontsize=12)
-            plt.ylabel("Polarity", fontsize=12)
-            st.pyplot(plt)
-
-# Footer
-st.markdown("<footer>Powered by NewsLens 🚀</footer>", unsafe_allow_html=True)
+# Footer section
+st.markdown("<footer>Powered by NewsLens & BiasAlias</footer>", unsafe_allow_html=True)
