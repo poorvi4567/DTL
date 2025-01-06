@@ -67,13 +67,26 @@ def detect_bias_and_sentiment(article_text):
         else "Neutral 😐"
     )
     
-    # Basic bias detection
-    if 'government' in article_text.lower() or 'politics' in article_text.lower():
-        bias_note = "This article discusses topics that are often politically charged. ⚖️ Be mindful of potential bias."
-    elif 'economy' in article_text.lower():
-        bias_note = "Economic articles can reflect the author's perspective on financial policies. 💰"
+    # Bias detection based on keywords
+    bias_categories = {
+        "government": "This article discusses politically sensitive topics. ⚖️ Be mindful of potential bias.",
+        "economy": "Economic topics often reflect the author's perspective on financial policies. 💰",
+        "health": "Health articles may contain strong opinions on medical advancements or policies. 🏥",
+        "medicine": "Medical content can be controversial, especially regarding treatments and vaccines. 💉",
+        "climate": "Discussions on climate change may reflect ideological perspectives. 🌍",
+        "environment": "Environmental policies and conservation topics can be politically charged. 🌱",
+        "technology": "Tech articles might reflect concerns about AI, cybersecurity, or ethics. 🤖",
+        "ai": "Artificial Intelligence is a debated topic, often associated with automation fears. 🧠",
+        "social": "Social issues like race, gender, or human rights are highly debated. ⚖️",
+        "education": "Educational policies and reforms can generate diverse opinions. 🎓"
+    }
+
+    detected_biases = [bias_categories[key] for key in bias_categories if key in article_text.lower()]
+    
+    if detected_biases:
+        bias_note = " ".join(detected_biases)
     else:
-        bias_note = "This article may have subjective viewpoints based on its content. 📖"
+        bias_note = "This article appears to be neutral or covers general topics. 📖"
 
     return sentiment_desc, sentiment_polarity, sentiment_subjectivity, bias_note
 
@@ -102,4 +115,3 @@ if st.button("Analyze"):
             st.error("❌ Failed to extract text from the provided URL. Please try another link.")
     else:
         st.error("⚠️ Please enter a valid URL.")
-
