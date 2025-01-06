@@ -8,4 +8,5 @@ textblob
 nltk
 serpapi
 seaborn
+openpyxl
 
